@@ -1,1 +1,1 @@
-# soccer_pj
+# streamlitを使用したサッカーの勝敗予想のWebアプリ
