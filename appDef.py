@@ -153,20 +153,22 @@ def radetchart(df_score,chart_player,column_names) :
 #取得した選手のスタッツを学習用の値に変換
 def calculationDF(stats_shoot, stats_to, stats_pass, stats_min, stats_shyubi):
    
-    DEFScore = stats_shoot+stats_to+stats_pass+stats_min+stats_shyubi
+    DEFScore = stats_shoot+(stats_to)*1.2+(stats_pass)*1.2+(stats_min)*0.9+(stats_shyubi)*1.5
     return DEFScore
 
 def calculationMF(stats_shoot, stats_to, stats_pass, stats_min):
    
-    MIDScore = stats_shoot+stats_to+stats_pass+stats_min
+    MIDScore = (stats_shoot)*1.1+(stats_to)*1.5+(stats_pass)*1.3+stats_min
     return MIDScore
 
 def calculationFW(stats_shoot, stats_to, stats_pass, stats_min):
    
-    ATTScore = stats_shoot+stats_to+stats_pass+stats_min
+    ATTScore = stats_shoot+(stats_to)*1.5+(stats_pass)*1.2+stats_min
     return ATTScore
 
+#ポジションごとに値を返す
 def selectPlayerStats(select_team,df_score_DF,df_score_MF,df_score_FW):
+    #初期値
     select_stats = None
     countDF = 0
     countMF = 0
@@ -175,6 +177,9 @@ def selectPlayerStats(select_team,df_score_DF,df_score_MF,df_score_FW):
     MIDScore = 0
     ATTScore = 0
     OVRScore = 0
+    #各ポジションの合計の最大値を取得
+    DF_stats_max,MF_stats_max,FW_stats_max = fullSelectPlayerStats(df_score_DF,df_score_MF,df_score_FW)
+    #ポジションごとに該当する名前があれば計算する
     for player in select_team:
         if player in df_score_DF["player"].values:
             select_stats = df_score_DF.loc[df_score_DF["player"] == player, ["シュート回数", "得点率", "パス回数", "出場時間", "守備力"]]
@@ -215,29 +220,41 @@ def selectPlayerStats(select_team,df_score_DF,df_score_MF,df_score_FW):
 
         else:
           st.write("選手が見つからない")
-          #人数分割る
+    #人数分割る
     if countDF != 0:
         DEFScore = math.floor(DEFScore / countDF)
         #仮の最大値で計算
-        DEFScore =  math.floor((DEFScore / 260)*100)
+        DEFScore =  math.floor((DEFScore / DF_stats_max)*100)+10
     else:
         DEFScore = 0
     if countMF != 0:
         MIDScore = math.floor(MIDScore / countMF)
         #仮の最大値で計算
-        MIDScore =  math.floor((DEFScore / 150)*100)
+        MIDScore =  math.floor((DEFScore / MF_stats_max)*50)+50
     else:
         MIDScore = 0
     if countFW != 0:
         ATTScore = math.floor(ATTScore / countFW)
         #仮の最大値で計算    
-        ATTScore =  math.floor((DEFScore / 160)*100)
+        ATTScore =  math.floor((DEFScore / FW_stats_max)*50)+50
     else:
         ATTScore = 0    
     OVRScore = math.floor((DEFScore+MIDScore+ATTScore)/3)
 
-    
-    
+    #st.write(DEFScore)
+    #st.write(MIDScore)
+    #st.write(ATTScore)
+    #st.write(OVRScore)
     return DEFScore,MIDScore,ATTScore,OVRScore
 
 
+#全体のスコア計算
+def fullSelectPlayerStats(df_score_DF,df_score_MF,df_score_FW):
+    df_score_DF["stats"] = df_score_DF["シュート回数"]+(df_score_DF["得点率"])*1.2+(df_score_DF["パス回数"])*1.2+(df_score_DF["出場時間"])*0.9+(df_score_DF["守備力"])*1.5
+    df_score_MF["stats"] = (df_score_MF["シュート回数"])*1.1+(df_score_MF["得点率"])*1.5+(df_score_MF["パス回数"])*1.3+df_score_MF["出場時間"]
+    df_score_FW["stats"] = df_score_FW["シュート回数"]+(df_score_FW["得点率"])*1.5+(df_score_FW["パス回数"])*1.2+df_score_FW["出場時間"]
+
+    DF_stats_max = math.floor(df_score_DF["stats"].max())
+    MF_stats_max = math.floor(df_score_MF["stats"].max())
+    FW_stats_max = math.floor(df_score_FW["stats"].max())
+    return DF_stats_max,MF_stats_max,FW_stats_max
